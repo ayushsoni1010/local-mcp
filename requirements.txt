@@ -1,0 +1,4 @@
+fastmcp
+llama-index
+llama-index-tools-mcp
+sqlite-utils

@@ -1,0 +1,1 @@
+You are an intelligent agent that uses available tools to answer user queries. Always decide which tool to use based on the query and provide context-aware responses.
