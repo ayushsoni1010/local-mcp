@@ -1,29 +1,33 @@
+# import sqlite3
+# import argparse
+# from fastmcp import FastMCP
+
+# mcp = FastMCP('sqlite-demo',dependencies=["fastmcp>=1.1.0", "llama-index>=0.10.0", "llama-index-llms-ollama>=0.1.0", "llama-index-tools-mcp>=0.1.0"])
+
+
 import sqlite3
 import argparse
-from fastmcp import FastMCP
+# Change the import to match what the CLI expects
+from mcp.server.fastmcp import FastMCP
 
-# Initialize the FastMCP server instance with a namespace "sqlite-demo"
-mcp = FastMCP('sqlite-demo')
+server = FastMCP('sqlite-demo')
 
 def init():
-    """
-    Create (if not exists) the SQLite 'people' table in demo.db
-    """
     connection = sqlite3.connect('demo.db')
     cursor = connection.cursor()
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS people(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            age INTEGER NOT NULL
-            profession TEXT NOT NULL
-        )
+    CREATE TABLE IF NOT EXISTS people(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        age INTEGER NOT NULL,
+        profession TEXT NOT NULL
+    )
     ''')
     connection.commit()
     return connection, cursor
 
-@mcp.tool()
-def add_data(query:str) -> bool:
+@server.tool()
+def add_data(query: str) -> bool:
     """Add new data to the people table using a SQL INSERT query.
 
     Args:
@@ -33,7 +37,7 @@ def add_data(query:str) -> bool:
 
     Returns:
         bool: True if data was added successfully, False otherwise.
-        
+    
     Example:
         >>> query = '''
         ... INSERT INTO people (name, age, profession) 
@@ -42,7 +46,7 @@ def add_data(query:str) -> bool:
         >>> add_data(query)
         True
     """
-    connection,cursor = init()
+    connection, cursor = init()
     try:
         cursor.execute(query)
         connection.commit()
@@ -52,18 +56,18 @@ def add_data(query:str) -> bool:
         return False
     finally:
         connection.close()
-        
-@mcp.tool()
-def read_data(query:str = 'SELECT * FROM people') -> list:
+
+@server.tool()
+def read_data(query: str = 'SELECT * FROM people') -> list:
     """Read data from the people table using a SQL SELECT query.
-    
+
     Args:
-        query (str,optional): SQL SELECT query. Defaults to "SELECT * FROM people".
+        query (str, optional): SQL SELECT query. Defaults to "SELECT * FROM people".
             Examples:
                 - "SELECT * FROM people"
                 - "SELECT name, age FROM people WHERE age > 30"
                 - "SELECT * FROM people ORDER BY age DESC"
-        
+    
     Returns:
         list: List of tuples containing the query results.
               For default query, tuple format is (id, name, age, profession).
@@ -73,7 +77,7 @@ def read_data(query:str = 'SELECT * FROM people') -> list:
         >>> read_data()
         [(1, 'John Doe', 30, 'Software Engineer'), (2, 'Jane Smith', 25, 'Data Scientist')]
     """
-    connection,cursor = init()
+    connection, cursor = init()
     try:
         cursor.execute(query)
         return cursor.fetchall()
@@ -86,20 +90,27 @@ def read_data(query:str = 'SELECT * FROM people') -> list:
 if __name__ == "__main__":
     # Start the server
     print("Starting server...")
-    
+
     # --- DEBUG MODE ---
     # uv run mcp dev server.py
-    
+
     # --- PRODUCTION MODE ---
     # uv run server.py --server_type=sse
-    
-    parser = argparse.ArgumentParser(description='Start the FastMCP SQLite demo server')
-    parser.add_argument(
-        '--server_type', '-s', choices=['sse', 'stdio'], default='sse',
-        help='Server mode: SSE (default) or STDIO'
-    )
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--server_type', type=str, default="sse", choices=["sse", "stdio"], help="Server type")
     args = parser.parse_args()
-    
-    init()
-    print(f"Starting FastMCP server in {args.server_type.upper()} mode...")
-    mcp.run(args.server_type)
+    server.run(args.server_type)
+
+    # Example Usage - This won't run in server mode, but keeping for reference
+    """
+    # Example INSERT query
+    insert_query = '''
+    INSERT INTO people (name, age, profession)
+    VALUES ('John Doe', 30, 'Software Engineer')
+    '''
+
+    # Add data
+    if add_data(insert_query):
+        print("Data added successfully.")
+    """
