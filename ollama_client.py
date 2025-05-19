@@ -34,8 +34,7 @@ def init_db():
     logger.info("Database initialized")
 
 # Initialize the LLM
-llm = Ollama(model="deepseek-r1", request_timeout=120.0)
-Settings.llm = llm
+llm = None
 
 # System prompt to guide the agent's behavior
 SYSTEM_PROMPT = """
@@ -108,9 +107,25 @@ async def main():
     """
     Main function to run the MCP client.
     """
+    
+    parser = argparse.ArgumentParser(description="MCP Agent for database operations")
+    parser.add_argument("--mcp-url", type=str, default="http://0.0.0.0:8000/sse", 
+                        help="URL for MCP server (default: http://0.0.0.0:8000/sse)")
+    parser.add_argument("--model", type=str, default="llama3", 
+                        help="Ollama model to use (default: llama3)")
+    parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
+    args = parser.parse_args()
+    
+    # Initialize the LLM with the specified model
+    global llm
+    llm = Ollama(model=args.model, request_timeout=120.0)
+    Settings.llm = llm
+
+    logger.info(f"Using Ollama model: {args.model}")
+    
     # Connect to MCP server
-    logger.info("Connecting to MCP server...")
-    mcp_client = BasicMCPClient("http://0.0.0.0:8000/sse")
+    logger.info(f"Connecting to MCP server at {args.mcp_url}...")
+    mcp_client = BasicMCPClient(args.mcp_url)
     tools_spec = McpToolSpec(client=mcp_client)
     
     # Initialize agent
