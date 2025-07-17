@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/ayushsoni1010-sqlite-mcp-agent-badge.png)](https://mseep.ai/app/ayushsoni1010-sqlite-mcp-agent)
+
 # Local MCP Client Demo
 
 This project demonstrates a fully local Model Context Protocol (MCP) client using:
